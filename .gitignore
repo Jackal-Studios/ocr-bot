@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#API key
+secrets/
+
+#pycharm idea files
+.idea

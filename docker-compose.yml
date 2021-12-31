@@ -9,4 +9,5 @@ services:
     volumes:
       - ./pythonfiles/:/home/OCRBOT/pythonfiles/
       - ./db/:/home/OCRBOT/db/
+      - ./secrets/:/home/OCRBOT/secrets/
     command: bash -c "python3 -u ./pythonfiles/main.py"

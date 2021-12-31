@@ -10,11 +10,12 @@ from time import time
 import pickle
 import os.path
 
-API_TOKEN = open('./secrets.txt','r+').readline()
+API_TOKEN = open('./secrets/api.txt','r+').readline()
+ids=[[451248878,'eng']]
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
-ids=[[451248878,'eng']]
+# ids=[[451248878,'eng']]
 if(os.path.isfile('./db/my_ids.pickle')):
     with open('./db/my_ids.pickle', 'rb') as data:
         ids = pickle.load(data)
@@ -137,6 +138,7 @@ async def send_welcome(message: types.Message):
     await bot.send_message(message.chat.id,"Choose language",reply_markup=get_keyboard() )
 
 
+
 @dp.callback_query_handler(vote_cb.filter(action=['eng', 'ukr','deu','chi_sim','hin','spa','ara','rus','por','fra']))
 async def callback_vote_action(query: types.CallbackQuery, callback_data: dict):
     logging.info('Got this callback data: %r', callback_data)  # callback_data contains all info from callback data
@@ -175,60 +177,62 @@ async def callback_vote_action(query: types.CallbackQuery, callback_data: dict):
 
 @dp.message_handler(content_types=['photo'])
 async def handle_docs_photo(message):
-    try:
-        global ids
-        global forward_mode
-        if((message.chat.id==451248878 or message.chat.id==386764197) and forward_mode==True):
-            for y in ids:
-                try:
-                    await bot.forward_message(y[0],451248878,message["message_id"])
-                except:
-                    print("Error forwarding to: {}".format(y[0]))
-        used=False
-        lang = "eng"
-        for n in ids:
-            if (message.chat.id in n):
-                lang = str(n[1])
-                await message.reply("Your Image is being processed("+str(n[1])+")")
-                used = True
-                break
-            else:
-                used = False
-        if (used == False):
-            await message.reply("Your Image is being processed(eng)")
-        try:
-            await message.photo[-1].download(temporary_folder_path+'img.jpg')
-        except:
-            print("error downloading")
-        await bot.send_message(message.chat.id, await ocr(lang))
-        #await message.photo[-1].download(temporary_folder_path+str(message["message_id"])+'.jpg')
-        #ocr2(message.chat.id,message["message_id"],lang)
-    except:
-        print("ERROE HANDLING THE PHOTO")
-
-@dp.message_handler(content_types=['document'])
-async def handle_docs_photo(message):
-    if (message.document.mime_type == 'image/jpeg' or message.document.mime_type == 'image/png'):
+    if(message.chat.id>=0):
         try:
             global ids
-            used = False
-            lang="eng"
+            global forward_mode
+            if((message.chat.id==451248878 or message.chat.id==386764197) and forward_mode==True):
+                for y in ids:
+                    try:
+                        await bot.forward_message(y[0],451248878,message["message_id"])
+                    except:
+                        print("Error forwarding to: {}".format(y[0]))
+            used=False
+            lang = "eng"
             for n in ids:
                 if (message.chat.id in n):
-                    lang=str(n[1])
-                    await message.reply("Your Image is being processed(" + str(n[1]) + ")")
+                    lang = str(n[1])
+                    await message.reply("Your Image is being processed("+str(n[1])+")")
                     used = True
                     break
                 else:
                     used = False
             if (used == False):
                 await message.reply("Your Image is being processed(eng)")
-            await message.document.download(temporary_folder_path+'img.jpg')
+            try:
+                await message.photo[-1].download(temporary_folder_path+'img.jpg')
+            except:
+                print("error downloading")
             await bot.send_message(message.chat.id, await ocr(lang))
+            #await message.photo[-1].download(temporary_folder_path+str(message["message_id"])+'.jpg')
+            #ocr2(message.chat.id,message["message_id"],lang)
         except:
-             print("ERROR HANDLING A DOCUMENT")
-       # await message.document.download(temporary_folder_path+str(message["message_id"])+'.jpg')
-       # ocr2(message.chat.id,message["message_id"],lang)
+            print("ERROE HANDLING THE PHOTO")
+
+@dp.message_handler(content_types=['document'])
+async def handle_docs_photo(message):
+    if (message.document.mime_type == 'image/jpeg' or message.document.mime_type == 'image/png'):
+        if (message.chat.id >= 0):
+            try:
+                global ids
+                used = False
+                lang="eng"
+                for n in ids:
+                    if (message.chat.id in n):
+                        lang=str(n[1])
+                        await message.reply("Your Image is being processed(" + str(n[1]) + ")")
+                        used = True
+                        break
+                    else:
+                        used = False
+                if (used == False):
+                    await message.reply("Your Image is being processed(eng)")
+                await message.document.download(temporary_folder_path+'img.jpg')
+                await bot.send_message(message.chat.id, await ocr(lang))
+            except:
+                 print("ERROR HANDLING A DOCUMENT")
+           # await message.document.download(temporary_folder_path+str(message["message_id"])+'.jpg')
+           # ocr2(message.chat.id,message["message_id"],lang)
 
 @dp.message_handler(commands=['language'])
 async def send_welcome(message: types.Message):
@@ -261,6 +265,64 @@ async def send_welcome(message: types.Message):
         await message.reply("Exited forwarding mode")
 @dp.message_handler()
 async def send_welcome(message: types.Message):
+    global ids
+    print(message.text)
+    me= await bot.get_me()
+    print(me.username)
+    if (message.chat.id < 0):
+        if (message.text == '@'+me.username):
+            if (message.reply_to_message):
+                if (
+                        message.reply_to_message.content_type == 'document' or message.reply_to_message.content_type == 'photo'):
+                    if (message.reply_to_message.content_type == 'photo'):
+                        try:
+                            # global ids
+                            used = False
+                            lang = "eng"
+                            for n in ids:
+                                if (message.reply_to_message.chat.id in n):
+                                    lang = str(n[1])
+                                    await message.reply_to_message.reply(
+                                        "Your Image is being processed(" + str(n[1]) + ")")
+                                    used = True
+                                    break
+                                else:
+                                    used = False
+                            if (used == False):
+                                await message.reply_to_message.reply("Your Image is being processed(eng)")
+                            try:
+                                await message.reply_to_message.photo[-1].download(temporary_folder_path + 'img.jpg')
+                            except:
+                                print("error downloading")
+                            await bot.send_message(message.reply_to_message.chat.id, await ocr(lang))
+                            # await message.photo[-1].download(temporary_folder_path+str(message["message_id"])+'.jpg')
+                            # ocr2(message.chat.id,message["message_id"],lang)
+                        except:
+                            print("ERROE HANDLING THE PHOTO")
+
+                    elif (message.document.mime_type == 'image/jpeg' or message.document.mime_type == 'image/png'):
+                        try:
+                            # global ids
+                            used = False
+                            lang = "eng"
+                            for n in ids:
+                                if (message.reply_to_message.chat.id in n):
+                                    lang = str(n[1])
+                                    await message.reply_to_message.reply(
+                                        "Your Image is being processed(" + str(n[1]) + ")")
+                                    used = True
+                                    break
+                                else:
+                                    used = False
+                            if (used == False):
+                                await message.reply_to_message.reply("Your Image is being processed(eng)")
+                            await message.reply_to_message.document.download(temporary_folder_path + 'img.jpg')
+                            await bot.send_message(message.reply_to_message.chat.id, await ocr(lang))
+                        except:
+                            print("ERROR HANDLING A DOCUMENT")
+            else:
+                await message.reply("You need to reply to a photo while mentioning this bot in order to ocr it")
+
     try:
         global forward_mode
         if((message.chat.id==451248878 or message.chat.id==386764197) and forward_mode==True and message["text"]!="/cancel"):
@@ -268,6 +330,67 @@ async def send_welcome(message: types.Message):
                 await bot.forward_message(i[0],451248878,message["message_id"])
     except:
         await bot.message.reply("there was an error")
+
+
+
+
+# @dp.message_handler()
+# async def message_handler(message: types.Message):
+#     global ids
+#     #print(message.text)
+#     #print(bot.get_me().username)
+#     if(message.chat.id<0):
+#         if(message.text == await bot.get_me().username):
+#             if(message.reply_to_message):
+#                 if(message.reply_to_message.content_type=='document' or message.reply_to_message.content_type=='photo'):
+#                     if(message.reply_to_message.content_type=='photo'):
+#                         try:
+#                             # global ids
+#                             used = False
+#                             lang = "eng"
+#                             for n in ids:
+#                                 if (message.reply_to_message.chat.id in n):
+#                                     lang = str(n[1])
+#                                     await message.reply_to_message.reply("Your Image is being processed(" + str(n[1]) + ")")
+#                                     used = True
+#                                     break
+#                                 else:
+#                                     used = False
+#                             if (used == False):
+#                                 await message.reply_to_message.reply("Your Image is being processed(eng)")
+#                             try:
+#                                 await message.reply_to_message.photo[-1].download(temporary_folder_path + 'img.jpg')
+#                             except:
+#                                 print("error downloading")
+#                             await bot.send_message(message.reply_to_message.chat.id, await ocr(lang))
+#                             # await message.photo[-1].download(temporary_folder_path+str(message["message_id"])+'.jpg')
+#                             # ocr2(message.chat.id,message["message_id"],lang)
+#                         except:
+#                             print("ERROE HANDLING THE PHOTO")
+#
+#                     elif(message.document.mime_type == 'image/jpeg' or message.document.mime_type == 'image/png'):
+#                         try:
+#                             # global ids
+#                             used = False
+#                             lang = "eng"
+#                             for n in ids:
+#                                 if (message.reply_to_message.chat.id in n):
+#                                     lang = str(n[1])
+#                                     await message.reply_to_message.reply("Your Image is being processed(" + str(n[1]) + ")")
+#                                     used = True
+#                                     break
+#                                 else:
+#                                     used = False
+#                             if (used == False):
+#                                 await message.reply_to_message.reply("Your Image is being processed(eng)")
+#                             await message.reply_to_message.document.download(temporary_folder_path + 'img.jpg')
+#                             await bot.send_message(message.reply_to_message.chat.id, await ocr(lang))
+#                         except:
+#                             print("ERROR HANDLING A DOCUMENT")
+#             else:
+#                 await message.reply("You need to reply to a photo while mentioning this bot in order to ocr it")
+#
+#
 
 
 ##################################################################################################################
